@@ -1,0 +1,179 @@
+import win.ui;
+/*DSG{{*/
+mainForm = ..win.form(text="58采集器";right=599;bottom=399)
+mainForm.add(
+button={cls="button";text="开始";left=520;top=8;right=576;bottom=32;z=4};
+button2={cls="button";text="button2";left=520;top=48;right=586;bottom=74;z=5};
+edit={cls="edit";text="http://nn.58.com/job/";left=8;top=8;right=368;bottom=32;edge=1;z=1};
+edit2={cls="edit";text="1";left=384;top=8;right=432;bottom=31;edge=1;z=2};
+edit3={cls="edit";text="100";left=448;top=8;right=504;bottom=30;edge=1;z=3}
+)
+/*}}*/
+
+
+var binarization=function(bmp,threshValue,isAuto){
+        if(isAuto){
+             threshValue=getThreshValue(bmp);
+        }
+        for(i=0;bmp.height-1;1){
+                for(j=0;bmp.width-1;1){
+                        argb=bmp.getPixel(j,i);
+                        argbStr=tostring(argb,16);
+                        R=..string.sub(argbStr,5,6);
+                        G=..string.sub(argbStr,7,8);
+                        B=..string.sub(argbStr,9,10);
+                        gray=(tonumber(R,16) * 19595 + tonumber(G,16) * 38469 + tonumber(B,16) * 7472) >> 16;
+                        if(gray>=threshValue){
+                                   bmp.setPixel(j,i,tonumber("0xffffffff",16));        //-1=tonumber("0xffffffff",16)
+                        }
+                        else {
+                                bmp.setPixel(j,i,tonumber("0xff000000",16));
+                        }
+                }
+        }
+        return bmp; 
+}
+
+function parseDetail(url){
+	import inet.whttp;
+	var html = inet.whttp().get(url);
+	//var basicMsg = string.match(html,'');
+	var basicMsg = string.fromto(html,65001,936);
+	//名称
+	var mc_reg = /*from=zhaopin_detail_qyName\'\)\">\s*(\S+)\s*\<\/a>*/;
+	var mc = string.match(basicMsg,mc_reg);
+	//性质
+	var xz_reg = /*\<span>性质：\<\/span>\s*(\S+)\s*\<\/li>*/;
+	var xz = string.match(basicMsg,xz_reg);
+	//规模
+	var gm_reg =/*\<li class=\"scale\">\s*\<span>规模：\<\/span>\s*(\S+)\s*\<\/li>*/;
+	var gm = string.match(basicMsg,gm_reg);
+	//联系人
+	var lxr_reg = /*\<span class=\"conTip\">\s*(\S+)\s*\<span>*/;
+   	var lxr = string.match(basicMsg,lxr_reg);
+   	//地址
+   	var adrs_reg = /*\<li class=\"condition\">\s*\<span>工作地址：\<\/span>\s*\<span>(\S*)\<\/span>*/;
+   	var adrs = string.match(basicMsg,adrs_reg);
+   	//电话
+   	var tel_url_reg = /*\<input id=\"pagenum\" value=\"(\S+)\" type=\"hidden\"*/;
+	var tel_url = string.match(basicMsg,tel_url_reg);
+	//行业
+	var hy_reg =/*\<span>行业：\<\/span>\s*\<a href="\S*" target="_blank">(\S+)\<\/a>\s*\<\/li>*/;
+   	var hy = string.match(basicMsg,hy_reg);
+   	//网址
+   	var wz_reg = /*\<a class=\"companyName\" href=\"(\S+)\" target=\"_blank\"*/;
+   	var wz = string.match(basicMsg,wz_reg);
+    //简介
+   	var jj_reg = /*\<h2>公司介绍\<\/h2>\s*\<\/div>\s*\<p>(\W+)\<\/p>*/;
+	var jj = string.match(basicMsg,jj_reg);
+	var tel1,tel2;
+	import console;
+	var teltab = string.split(tostring(tel_url),'_');
+	tel1 = teltab[1];
+	tel2 = teltab[2];
+	if(tel1!=null){
+   		tel1 = "http://image.58.com/showphone.aspx?t=v55&v="+tel1;
+    }
+    if(tel2!=null){
+   		tel2 = "http://image.58.com/showphone.aspx?t=v55&v="+tel2;
+   	}
+   	console.log("公司名称：",mc);
+   	console.log("公司性质：",xz);
+   	console.log("公司规模：",gm);
+   	console.log("联系人：",lxr);
+   	console.log("地址：",adrs);
+   	console.log("电话：",tel1);
+   	console.log("电话2：",tel2);
+   	console.log("公司行业：",hy);
+   	console.log("企业网址：",wz);
+   	console.log("公司简介：",jj);
+}
+
+var parseCompany = function(url){
+	//winform.msgbox( winform.button3.text );
+	import inet.whttp;
+	var html = inet.whttp().get(url);
+	var basicMsg = string.match(html,'<div class=\"basicMsg\">.*</div>');
+	basicMsg = string.fromto(basicMsg,65001,936);
+	var xz_reg = "<@<th>公司性质</th>@>\s*<@<td>@>\s*(\S*)\s*<@</td>@>";
+	var xz = string.match(basicMsg,xz_reg);
+	
+	var gm_reg ="<@<th>公司规模</th><td>@>\s*(\S*)\s*<@</td>@>";
+	var gm = string.match(basicMsg,gm_reg);
+	
+	var lxr_reg = "<@<th>联系人</th>@>\s*<@<td>@>\s*(\S*)\s*<@</td>@>";
+   	var lxr = string.match(basicMsg,lxr_reg);
+   	
+   	var adrs_reg = /*\<td class=\"adress\" colspan=\"3\">\s*\<span>(\S+)\<\/span>*/;
+   	var adrs = string.match(basicMsg,adrs_reg);
+   	
+   	var tel_url_reg = /*\<td class\=\"telNum\"\>\s*\<img src\=\"(\S*)\"\>*/;
+	var tel_url = string.match(basicMsg,tel_url_reg);
+	
+	var hy_reg =/*<a class=\"c33\" target=\"\_blank\" href\=\"\b.*\">(\S+)\<\/a>*/;
+   	var hy = string.match(basicMsg,hy_reg);
+   	
+   	var wz_reg = /*<th>企业网址\<\/th>@>\s*\<td>\s*\<a href\=\"(\S+)\"*/;
+   	var wz = string.match(basicMsg,wz_reg);
+   
+   	var jj_reg = "\<div class\=\""compIntro\""\>\s*\<p\>\s*(\S+)\s*\<\/p\>\s*\<\/div\>";
+	var jj = string.match(basicMsg,jj_reg);
+   	
+   	import console;
+   	console.log("公司性质：",xz);
+   	console.log("公司规模：",gm);
+   	console.log("联系人：",lxr);
+   	console.log("地址：",adrs);
+   	console.log("电话：",tel_url);
+   	console.log("公司行业：",hy);
+   	console.log("企业网址：",wz);
+   	console.log("公司简介：",jj);
+   	
+}
+
+var parseCateList = function(url){
+	import inet.whttp;
+	var html = inet.whttp().get(url);
+	var htmlReg = "\<div id=\""top_google_ad\""(.*)\<div id=\""bottom_google_ad\""";
+	var basicMsg = string.match(html,htmlReg);
+	basicMsg = string.fromto(basicMsg,65001,936);
+	//string.save("a.txt",basicMsg );
+	var hrefReg = /*\<a href=\'(\S+)\.shtml\'*/;
+	import console;
+	
+	for str3 in string.gmatch(basicMsg,hrefReg){
+		console.log(str3+".shtml");
+	}
+	
+}
+
+mainForm.button.oncommand = function(id,event){
+	
+	//parseCateList("http://nn.58.com/job/");
+	parseDetail("http://nn.58.com/zpmeishu/19262660667785x.shtml");
+	//parseCompany("http://qy.58.com/40919528/");
+	try{
+		
+	}
+}
+
+mainForm.button2.oncommand = function(id,event){
+	//mainForm.msgbox( mainForm.button2.text );
+	import console;
+	import gdip;
+	import soImage;
+	//var bmp = gdip.image("\res\showphone.gif");
+	//var bmp = gdip.bitmap("\res\showphone.BMP");
+	//bmp = binarization(bmp,,true);
+	var img=soImage(); 
+	
+	img.load("\res\showphone.gif");
+	//二值化，去噪
+	//img.bpp(1);
+    //img.bpp(24); 
+    img.bpp(1);
+	img.save("\res\aa.bmp");
+}
+
+mainForm.show() 
+win.loopMessage(); 
