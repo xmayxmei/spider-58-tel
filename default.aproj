@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="gb2312"?>
-<project ver="6" name="58采集器" libEmbed="true" icon="..." ui="win" output="快手工程15.exe" CompanyName="单位名称" FileDescription="58采集器" LegalCopyright="Copyright (C) 作者 2014" ProductName="58采集器" InternalName="58采集器" FileVersion="0.0.0.1" ProductVersion="0.0.0.1" publishDir="/Publish/">
+<project ver="6" name="58采集器" libEmbed="true" icon="..." ui="win" output="Cai58.exe" CompanyName="单位名称" FileDescription="58采集器" LegalCopyright="Copyright (C) 作者 2014" ProductName="58采集器" InternalName="58采集器" FileVersion="0.0.0.1" ProductVersion="0.0.0.1" publishDir="/Publish/">
 	<file name="main.aau" path="default.main.aau" comment="default.main.aau"/>
-	<folder name="资源文件" path="res" embed="true"/>
+	<folder name="资源文件" path="res" embed="true">
+		<file name="yzm.bmp" path="res\yzm.bmp" comment="res\yzm.bmp"/>
+		<file name="test.jpg" path="res\test.jpg" comment="res\test.jpg"/>
+		<file name="showphone_meitu_1.jpg" path="res\showphone_meitu_1.jpg" comment="res\showphone_meitu_1.jpg"/>
+		<file name="showphone.gif" path="res\showphone.gif" comment="res\showphone.gif"/>
+	</folder>
 </project>

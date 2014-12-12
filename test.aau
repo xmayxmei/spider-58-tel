@@ -1,0 +1,29 @@
+import win.ui;
+/*DSG{{*/
+var winform = ..win.form(text="AAuto Form";right=599;bottom=399;border="dialog frame")
+winform.add(
+button={cls="button";text="识别";left=67;top=235;right=211;bottom=279;z=3};
+edit={cls="edit";left=64;top=121;right=506;bottom=202;edge=1;multiline=1;z=2};
+picturebox={cls="picturebox";left=64;top=52;right=140;bottom=76;autosize=1;center=1;image=$"\test.jpg";z=1}
+)
+/*}}*/
+
+import tesseract;
+winform.button.oncommand = function(id,event){
+	var ocr = tesseract.ocr(); 
+	if( 0 != ocr.init("eng","/") ){ //初始化样本语言包
+		winform.edit.text = "没有找到样本 \tessdata\eng.traineddata";
+		return;
+	}
+	
+	//预设字符集可提升识别率，注意要一定在加载样本以后调用此函数
+	ocr.setVariable("tessedit_char_whitelist","0123456789")
+	
+	//识别图像
+	winform.edit.text = ocr.processPages("\test.jpg" )  
+	ocr.delete();
+}
+
+winform.show() 
+win.loopMessage();
+ 

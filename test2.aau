@@ -1,0 +1,30 @@
+import console;
+import tesseract;
+import win;
+
+var ocr = tesseract.ocr();
+if( 0 != ocr.init("eng","/" ) ){ //初始化样本语言包 
+	var prefix = win.getenv("TESSDATA_PREFIX");
+	if(!#prefix) prefix = "~\lib\tesseract\.res\"
+	error("没有找到样本 " + prefix + "eng.traineddata",2)
+	
+}
+
+//预设字符集可提升识别率，注意要一定在加载样本以后调用此函数
+ocr.setVariable("tessedit_char_whitelist","0123456789");
+
+//获取图像像素数据
+var pix = liblept.pixRead( ..io.fullpath("\showphone_meitu_1.jpg") );
+ocr.setImage2( pix ) 
+
+//识别图像
+if( 0 != ocr.recognize() ){
+	console.pause(true,"识别图像出错");
+	return;
+}
+
+var text = ocr.getText()
+console.log("识别结果",text )
+
+liblept.pixDestroy({addr pix = pix}) 
+console.pause();

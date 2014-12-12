@@ -2,15 +2,18 @@ import win.ui;
 /*DSG{{*/
 mainForm = ..win.form(text="58采集器";right=599;bottom=399)
 mainForm.add(
-button={cls="button";text="开始";left=520;top=8;right=576;bottom=32;z=4};
-button2={cls="button";text="button2";left=520;top=48;right=586;bottom=74;z=5};
+button={cls="button";text="开始";left=520;top=8;right=588;bottom=32;z=4};
+button3={cls="button";text="导出";left=520;top=47;right=586;bottom=73;z=6};
 edit={cls="edit";text="http://nn.58.com/job/";left=8;top=8;right=368;bottom=32;edge=1;z=1};
 edit2={cls="edit";text="1";left=384;top=8;right=432;bottom=31;edge=1;z=2};
-edit3={cls="edit";text="100";left=448;top=8;right=504;bottom=30;edge=1;z=3}
+edit3={cls="edit";text="10";left=448;top=8;right=504;bottom=30;edge=1;z=3};
+listview={cls="listview";left=8;top=41;right=504;bottom=390;bgcolor=16777215;edge=1;z=5}
 )
 /*}}*/
 
-
+mainForm.listview.insertColumn("目标网址",600);
+var ocr = null;
+//mainForm.listview.insertColumn("进度",60);
 var binarization=function(bmp,threshValue,isAuto){
         if(isAuto){
              threshValue=getThreshValue(bmp);
@@ -34,9 +37,59 @@ var binarization=function(bmp,threshValue,isAuto){
         return bmp; 
 }
 
+//保存验证码；
+var saveCaptcha = function(url){
+	import gdip;
+	import soImage;
+	var img=soImage();
+	img.setBytes(inet.whttp().get(url),"*.gif");
+	img.save("\res\showphone.gif");
+	//img.load("\res\showphone.gif");
+	var newbmp = "\res\yzm.bmp" ;
+	//二值化，去噪
+	img.bpp(1);
+    img.bpp(24); 
+    img.bpp(1);
+	img.save(newbmp);
+	return newbmp;
+}
+
+//识别库初始化
+var initTesseract = function(){
+	import tesseract;
+	var ocr = tesseract.ocr();
+	if( 0 != ocr.init("eng","/" ) ){ //初始化样本语言包 
+		var prefix = win.getenv("TESSDATA_PREFIX");
+		if(!#prefix) prefix = "~\lib\tesseract\.res\"
+		error("没有找到样本 " + prefix + "eng.traineddata",2)
+		
+	}
+	return ocr;
+}
+//识别
+var captcha =function(url){
+	var newbmp = saveCaptcha(url);
+	var text = "0";
+	//预设字符集可提升识别率，注意要一定在加载样本以后调用此函数
+	ocr.setVariable("tessedit_char_whitelist","0123456789-");
+	//获取图像像素数据
+	var pix = liblept.pixRead( ..io.fullpath(newbmp) );
+	ocr.setImage2( pix ) ;
+	//识别图像
+	if( 0 != ocr.recognize() ){
+		text = "0";
+	}
+	text = ocr.getText();
+	text = string.replace(text,"\s","");
+	liblept.pixDestroy({addr pix = pix}) ;
+	return text;
+}
+
+//解析详情页
 function parseDetail(url){
 	import inet.whttp;
 	var html = inet.whttp().get(url);
+	win.delay(1);
 	//var basicMsg = string.match(html,'');
 	var basicMsg = string.fromto(html,65001,936);
 	//名称
@@ -73,10 +126,13 @@ function parseDetail(url){
 	tel2 = teltab[2];
 	if(tel1!=null){
    		tel1 = "http://image.58.com/showphone.aspx?t=v55&v="+tel1;
+   		tel1 = captcha(tel1);
     }
     if(tel2!=null){
    		tel2 = "http://image.58.com/showphone.aspx?t=v55&v="+tel2;
+   		tel2 = captcha(tel2);
    	}
+   	/**
    	console.log("公司名称：",mc);
    	console.log("公司性质：",xz);
    	console.log("公司规模：",gm);
@@ -87,6 +143,9 @@ function parseDetail(url){
    	console.log("公司行业：",hy);
    	console.log("企业网址：",wz);
    	console.log("公司简介：",jj);
+   	**/
+   	var info = tostring(mc) + "," +tostring(hy)+"," + tostring(xz)+ "," + tostring(gm)+ "," + tostring(adrs)+ "," + tostring(lxr)+ "," + tostring(tel1)+ "," + tostring(tel2)+ "," + tostring(url);
+   	return info;
 }
 
 var parseCompany = function(url){
@@ -130,50 +189,100 @@ var parseCompany = function(url){
    	console.log("公司简介：",jj);
    	
 }
-
+//得到列表页的所有详情链接
 var parseCateList = function(url){
 	import inet.whttp;
 	var html = inet.whttp().get(url);
+	win.delay(1000);
 	var htmlReg = "\<div id=\""top_google_ad\""(.*)\<div id=\""bottom_google_ad\""";
 	var basicMsg = string.match(html,htmlReg);
 	basicMsg = string.fromto(basicMsg,65001,936);
 	//string.save("a.txt",basicMsg );
 	var hrefReg = /*\<a href=\'(\S+)\.shtml\'*/;
 	import console;
-	
+	var detailUrl = null;
+	var detailUrlTab = {};
 	for str3 in string.gmatch(basicMsg,hrefReg){
-		console.log(str3+".shtml");
+		win.delay(1);
+		detailUrl = str3+".shtml";
+		table.push(detailUrlTab,detailUrl);
+		mainForm.listview.addItem(detailUrl);
+		//console.log(detailUrl);
 	}
-	
+	return detailUrlTab;
+}
+//得到所有列表页
+var getPageList = function(url,st,ed){
+	var url2 = "http://nn.58.com/meirongjianshen/?PGTID=14183459010720.14320651860907674&ClickID=0";
+	var pageUrlPri = string.match(url,"(\S+)\?");
+	if(pageUrlPri==null){
+		pageUrlPri = url;
+	}
+	var pageUrl = null;
+	var pageUrlTab = {};
+	import console;
+	for(i=st;ed;1){
+		win.delay(1);
+		pageUrl = pageUrlPri+"pn"+tostring(i)+"/";
+		table.push(pageUrlTab,pageUrl);
+		mainForm.listview.addItem(pageUrl);
+	}
+	return pageUrlTab;
 }
 
 mainForm.button.oncommand = function(id,event){
-	
-	//parseCateList("http://nn.58.com/job/");
-	parseDetail("http://nn.58.com/zpmeishu/19262660667785x.shtml");
-	//parseCompany("http://qy.58.com/40919528/");
-	try{
-		
+	ocr = initTesseract();//加载识别库
+	var url = mainForm.edit.text;
+	var st = mainForm.edit2.text;
+	var ed = mainForm.edit3.text;
+	mainForm.listview.clear();
+	mainForm.listview.addItem("获取所有列表页...");
+	var pageUrlTab = getPageList(url,st,ed);
+	var pageDetailUrlTab ={};
+	var allDetailUrlTab = {};
+	mainForm.listview.addItem("获取所有详情页...");
+	for(i=1;#pageUrlTab;1){
+		try{
+			pageDetailUrlTab = parseCateList(pageUrlTab[i]);
+			for(k=1;#pageDetailUrlTab;1){
+				table.push(allDetailUrlTab,pageDetailUrlTab[k]);
+			}
+			//table.concat(allDetailUrlTab,pageDetailUrlTab);
+			//table.push(allDetailUrlTab,pageDetailUrlTab);
+		}
+	}
+	mainForm.listview.addItem("解析详情页...");
+	import console;
+	//console.log(#allDetailUrlTab);
+	for(j=1;#allDetailUrlTab;1){
+		try{
+			//console.log(allDetailUrlTab[j]);
+			var info = parseDetail(allDetailUrlTab[j]);
+			mainForm.listview.addItem(info);
+			//parseCompany("http://qy.58.com/40919528/");
+		}
 	}
 }
 
-mainForm.button2.oncommand = function(id,event){
-	//mainForm.msgbox( mainForm.button2.text );
-	import console;
-	import gdip;
-	import soImage;
-	//var bmp = gdip.image("\res\showphone.gif");
-	//var bmp = gdip.bitmap("\res\showphone.BMP");
-	//bmp = binarization(bmp,,true);
-	var img=soImage(); 
+
+mainForm.button3.oncommand = function(id,event){
+	//mainForm.msgbox( mainForm.button3.text );
+	//parseDetail("http://nn.58.com/meirongjianshen/17594026915457x.shtml");
+	import fsys.dlg;
+	var path = fsys.dlg.save("*.txt|*.txt|",,,,io.fullpath(""),"所有列表")
+    for(i=1;mainForm.listview.count;1){
+        var a=mainForm.listview.getItemText(i,1);
+        string.save(path,a+'\r\n',true);
+    }
 	
-	img.load("\res\showphone.gif");
-	//二值化，去噪
-	//img.bpp(1);
-    //img.bpp(24); 
-    img.bpp(1);
-	img.save("\res\aa.bmp");
 }
 
+
+mainForm.listview.onnotify = function(id,code,ptr){
+	//var nmdr = win.ui.NMHDR(); raw.convert( ptr,nmdr );;
+	import inet.whttp;
+	var html = inet.whttp().get(url);
+	
+}
 mainForm.show() 
 win.loopMessage(); 
