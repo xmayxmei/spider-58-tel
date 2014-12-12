@@ -2,16 +2,21 @@ import win.ui;
 /*DSG{{*/
 mainForm = ..win.form(text="58采集器";right=599;bottom=399)
 mainForm.add(
-button={cls="button";text="开始";left=520;top=8;right=588;bottom=32;z=4};
-button3={cls="button";text="导出";left=520;top=47;right=586;bottom=73;z=6};
+button={cls="button";text="开始";left=519;top=13;right=587;bottom=50;z=4};
+button2={cls="button";text="浏览...";left=439;top=34;right=505;bottom=60;z=7};
+button3={cls="button";text="导出";left=520;top=67;right=587;bottom=91;hide=1;z=8};
 edit={cls="edit";text="http://nn.58.com/job/";left=8;top=8;right=368;bottom=32;edge=1;z=1};
-edit2={cls="edit";text="1";left=384;top=8;right=432;bottom=31;edge=1;z=2};
+edit2={cls="edit";text="1";left=384;top=8;right=430;bottom=31;edge=1;z=2};
 edit3={cls="edit";text="10";left=448;top=8;right=504;bottom=30;edge=1;z=3};
-listview={cls="listview";left=8;top=41;right=504;bottom=390;bgcolor=16777215;edge=1;z=5}
+edit4={cls="edit";text="\res\1.txt";left=8;top=38;right=429;bottom=58;edge=1;multiline=1;z=6};
+listview={cls="listview";left=8;top=67;right=504;bottom=390;bgcolor=16777215;edge=1;z=5}
 )
 /*}}*/
 
 mainForm.listview.insertColumn("目标网址",600);
+var savePath = io.fullpath("\res\1.txt");
+var idx = 1;
+mainForm.edit4.text = savePath;
 var ocr = null;
 //mainForm.listview.insertColumn("进度",60);
 var binarization=function(bmp,threshValue,isAuto){
@@ -144,7 +149,11 @@ function parseDetail(url){
    	console.log("企业网址：",wz);
    	console.log("公司简介：",jj);
    	**/
+   	idx = idx+1;
    	var info = tostring(mc) + "," +tostring(hy)+"," + tostring(xz)+ "," + tostring(gm)+ "," + tostring(adrs)+ "," + tostring(lxr)+ "," + tostring(tel1)+ "," + tostring(tel2)+ "," + tostring(url);
+   	var info2 = tostring(idx)+"		"+ tostring(mc) + "		" +tostring(hy)+"	" + tostring(xz)+ "		" + tostring(gm)+ "		" + tostring(adrs)+ "	" + tostring(lxr)+ "	" + tostring(tel1)+ "	" + tostring(tel2)+ "	" + tostring(url);
+   	string.save(savePath,info2 +'\r\n',true);
+   	win.delay(1);
    	return info;
 }
 
@@ -231,6 +240,7 @@ var getPageList = function(url,st,ed){
 }
 
 mainForm.button.oncommand = function(id,event){
+	savePath = mainForm.edit4.text;
 	ocr = initTesseract();//加载识别库
 	var url = mainForm.edit.text;
 	var st = mainForm.edit2.text;
@@ -272,17 +282,22 @@ mainForm.button3.oncommand = function(id,event){
 	var path = fsys.dlg.save("*.txt|*.txt|",,,,io.fullpath(""),"所有列表")
     for(i=1;mainForm.listview.count;1){
         var a=mainForm.listview.getItemText(i,1);
-        string.save(path,a+'\r\n',true);
+        string.save(path,tostring(a)+'\r\n',true);
     }
 	
 }
 
-
-mainForm.listview.onnotify = function(id,code,ptr){
-	//var nmdr = win.ui.NMHDR(); raw.convert( ptr,nmdr );;
-	import inet.whttp;
-	var html = inet.whttp().get(url);
-	
+mainForm.button2.oncommand = function(id,event){
+	//mainForm.msgbox( mainForm.button2.text );
+	import fsys.dlg;
+	var path = fsys.dlg.save(
+        "*.txt|*.txt|",
+        io.fullpath("")
+    );
+    if(path!=null){
+		mainForm.edit4.text = path;
+	}
 }
+
 mainForm.show() 
 win.loopMessage(); 

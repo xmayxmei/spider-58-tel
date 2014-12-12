@@ -7,4 +7,7 @@
 		<file name="showphone_meitu_1.jpg" path="res\showphone_meitu_1.jpg" comment="res\showphone_meitu_1.jpg"/>
 		<file name="showphone.gif" path="res\showphone.gif" comment="res\showphone.gif"/>
 	</folder>
+	<folder name="tessdata" path="tessdata" comment="tessdata">
+		<file name="eng.traineddata" path="tessdata\eng.traineddata" comment="tessdata\eng.traineddata"/>
+	</folder>
 </project>
